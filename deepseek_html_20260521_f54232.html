@@ -1,0 +1,123 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>KUPACK · Herramientas para baterías</title>
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+    body {
+      background: #060809;
+      font-family: 'Segoe UI', 'Space Grotesk', system-ui, sans-serif;
+      min-height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 20px;
+    }
+    .container {
+      max-width: 900px;
+      width: 100%;
+      text-align: center;
+    }
+    .logo {
+      margin-bottom: 48px;
+    }
+    .logo h1 {
+      font-family: 'Bebas Neue', 'Segoe UI', sans-serif;
+      font-size: 64px;
+      letter-spacing: 6px;
+      color: #f0a500;
+      text-shadow: 0 0 30px rgba(240,165,0,0.3);
+    }
+    .logo p {
+      color: #7a8a9a;
+      font-size: 14px;
+      letter-spacing: 2px;
+      margin-top: 8px;
+    }
+    .buttons {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 24px;
+      justify-content: center;
+      margin-top: 20px;
+    }
+    .btn {
+      background: #0c1018;
+      border: 1px solid rgba(255,255,255,0.1);
+      border-radius: 32px;
+      padding: 24px 40px;
+      width: 280px;
+      cursor: pointer;
+      transition: all 0.25s ease;
+      text-decoration: none;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 12px;
+    }
+    .btn:hover {
+      transform: translateY(-5px);
+      border-color: rgba(240,165,0,0.5);
+      box-shadow: 0 20px 30px -15px rgba(0,0,0,0.5);
+    }
+    .btn-icon {
+      font-size: 48px;
+    }
+    .btn-title {
+      font-size: 22px;
+      font-weight: 700;
+      color: #e0e8f0;
+    }
+    .btn-desc {
+      font-size: 13px;
+      color: #8a9ab0;
+      line-height: 1.5;
+    }
+    .btn-analizador .btn-title { color: #f0a500; }
+    .btn-disenador .btn-title { color: #4db8ff; }
+    .footer {
+      margin-top: 60px;
+      color: #445566;
+      font-size: 12px;
+      border-top: 1px solid rgba(255,255,255,0.05);
+      padding-top: 24px;
+    }
+    @media (max-width: 640px) {
+      .btn { width: 100%; padding: 20px; }
+      .logo h1 { font-size: 48px; }
+    }
+  </style>
+</head>
+<body>
+<div class="container">
+  <div class="logo">
+    <h1>KUPACK</h1>
+    <p>RECYCLED BATTERY TOOLS</p>
+  </div>
+
+  <div class="buttons">
+    <a href="analizador.html" class="btn btn-analizador" target="_blank">
+      <div class="btn-icon">🔧📊</div>
+      <div class="btn-title">ANALIZADOR + BUILDER</div>
+      <div class="btn-desc">Testea celdas, calcula SOH, balancea packs, guarda historial</div>
+    </a>
+
+    <a href="battery-designer.html" class="btn btn-disenador" target="_blank">
+      <div class="btn-icon">🎨🖌️</div>
+      <div class="btn-title">DISEÑADOR 3D</div>
+      <div class="btn-desc">Diseña packs visualmente, añade níquel, aísla, vista 360°</div>
+    </a>
+  </div>
+
+  <div class="footer">
+    ⚡ Las celdas testeadas en el Analizador se guardan automáticamente y pueden usarse en el Diseñador 3D
+  </div>
+</div>
+</body>
+</html>
