@@ -1,0 +1,497 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
+<title>KUPACK · Analizador de baterías recicladas</title>
+<link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=DM+Mono:wght@300;400;500;600&display=swap" rel="stylesheet">
+<style>
+  *{margin:0;padding:0;box-sizing:border-box;}
+  body{background:#080809;color:#d0d0d0;font-family:'DM Mono',monospace;min-height:100vh;}
+  ::-webkit-scrollbar{width:4px;}
+  ::-webkit-scrollbar-thumb{background:#1e1e1e;border-radius:2px;}
+  :root{--acc:#f0a500;--acc2:#ff6b00;--blue:#4db8ff;--dim:#777;--border:rgba(255,255,255,0.1);}
+  
+  header{position:sticky;top:0;z-index:99;background:rgba(8,8,9,0.92);backdrop-filter:blur(16px);border-bottom:1px solid rgba(77,184,255,0.12);padding:12px 16px;display:flex;flex-direction:column;align-items:center;gap:8px;}
+  #logo{font-family:'Bebas Neue',sans-serif;font-size:28px;letter-spacing:4px;color:var(--acc);text-shadow:0 0 20px #f0a50055;}
+  #logo-sub{font-family:'DM Mono',monospace;font-size:9px;letter-spacing:2px;color:#888;}
+  .nav-row{display:flex;gap:4px;justify-content:center;flex-wrap:wrap;margin-top:6px;}
+  .nav-btn{background:transparent;border:none;padding:6px 12px;color:#aaa;font-family:inherit;font-size:10px;letter-spacing:1px;cursor:pointer;border-radius:20px;transition:all0.2s;}
+  .nav-btn.on{background:rgba(240,165,0,0.2);color:var(--acc);font-weight:700;}
+  .lang-selector{display:flex;gap:4px;margin-top:6px;}
+  .lang-btn{background:transparent;border:none;font-size:16px;cursor:pointer;opacity:0.5;}
+  .lang-btn.on{opacity:1;transform:scale(1.1);}
+  
+  main{max-width:660px;margin:0 auto;padding:20px 16px 80px;}
+  .tab{display:none;animation:fadeIn 0.25s ease;}
+  .tab.on{display:block;}
+  @keyframes fadeIn{from{opacity:0;transform:translateY(8px);}to{opacity:1;transform:none;}}
+  
+  .card{background:rgba(255,255,255,0.02);border:1px solid var(--border);border-radius:16px;padding:18px;margin-bottom:16px;}
+  .card-title{font-size:10px;color:#aaa;letter-spacing:2px;text-transform:uppercase;margin-bottom:14px;}
+  .btn{padding:10px 18px;border-radius:10px;border:none;font-family:inherit;font-size:11px;letter-spacing:1px;font-weight:600;cursor:pointer;transition:all0.2s;}
+  .btn-primary{background:linear-gradient(135deg,var(--acc),var(--acc2));color:#000;}
+  .btn-ghost{background:rgba(255,255,255,0.05);color:#bbb;border:1px solid var(--border);}
+  .btn-sm{padding:6px 12px;font-size:10px;}
+  .btn-danger{background:rgba(255,60,60,0.1);color:#ff7070;border:1px solid rgba(255,60,60,0.2);}
+  .inp{background:rgba(255,255,255,0.07);border:1px solid var(--border);border-radius:10px;padding:10px 12px;color:#fff;font-family:inherit;font-size:13px;width:100%;outline:none;}
+  .inp:focus{border-color:var(--blue);}
+  
+  /* Steps */
+  .steps{display:flex;margin-bottom:24px;gap:4px;}
+  .step-item{flex:1;text-align:center;}
+  .step-circle{width:32px;height:32px;margin:0 auto 6px;border-radius:50%;border:1px solid var(--border);display:flex;align-items:center;justify-content:center;font-size:12px;background:#0e0e10;}
+  .step-item.active .step-circle{background:var(--acc);color:#000;border-color:var(--acc);}
+  .step-item.done .step-circle{border-color:var(--acc);color:var(--acc);}
+  .step-label{font-size:8px;color:#888;}
+  
+  /* Grids */
+  #cap-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(100px,1fr));gap:8px;max-height:320px;overflow-y:auto;}
+  .cap-cell{background:rgba(255,255,255,0.05);border:1px solid var(--border);border-radius:10px;padding:8px;}
+  .cap-lbl{font-size:9px;color:#aaa;}
+  .cap-inp{background:transparent;border:none;color:var(--acc);font-weight:700;font-size:14px;width:100%;outline:none;}
+  .num-btn{width:40px;height:40px;border-radius:50%;background:rgba(255,255,255,0.07);border:1px solid var(--border);color:#ccc;font-size:20px;cursor:pointer;}
+  #config-grid{display:grid;grid-template-columns:1fr 1fr 1fr;gap:12px;}
+  .cfg-val{font-size:28px;font-weight:800;}
+  .chem-pill{padding:8px 16px;border-radius:30px;background:rgba(255,255,255,0.05);border:1px solid var(--border);cursor:pointer;font-size:11px;}
+  .chem-pill.on{background:rgba(240,165,0,0.2);border-color:var(--acc);color:var(--acc);}
+  
+  /* Test cells */
+  .test-cell-card{background:rgba(255,255,255,0.02);border:1px solid var(--border);border-radius:14px;padding:14px;margin-bottom:10px;}
+  .test-cell-id{font-family:'Bebas Neue',sans-serif;font-size:24px;color:var(--acc);}
+  .test-fields{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:10px;}
+  .test-field{display:flex;flex-direction:column;gap:4px;}
+  .test-field label{font-size:9px;color:#aaa;text-transform:uppercase;}
+  .badge{display:inline-block;padding:4px 10px;border-radius:20px;font-size:10px;background:rgba(240,165,0,0.15);color:var(--acc);}
+  .sum-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(130px,1fr));gap:8px;}
+  .sum-card{background:rgba(255,255,255,0.02);border:1px solid var(--border);border-radius:12px;padding:12px;}
+  .sum-lbl{font-size:9px;color:#888;margin-bottom:4px;}
+  .sum-val{font-size:18px;font-weight:700;}
+  
+  .modal-overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,0.85);backdrop-filter:blur(6px);z-index:200;align-items:center;justify-content:center;}
+  .modal-overlay.on{display:flex;}
+  .modal-box{background:#12161f;border-radius:20px;padding:24px;max-width:400px;width:90%;border:1px solid var(--border);}
+  .test-empty{text-align:center;padding:40px;color:#888;}
+</style>
+</head>
+<body>
+
+<header>
+  <div id="logo">🔋 KUPACK <span id="logo-sub">ANALIZA · CLASIFICA · EQUILIBRA</span></div>
+  <div class="nav-row">
+    <button class="nav-btn on" data-tab="main">BÁSICO</button>
+    <button class="nav-btn" data-tab="test">COMPLETO</button>
+    <button class="nav-btn" data-tab="stats">STATS</button>
+    <button class="nav-btn" data-tab="history">HISTORIAL</button>
+    <button class="nav-btn" data-tab="decoder">DECODER</button>
+  </div>
+  <div class="nav-row">
+    <button class="nav-btn" data-tab="about">INFO</button>
+    <button class="nav-btn" data-tab="donate">DONATIVO</button>
+  </div>
+  <div class="lang-selector" id="langSelector">
+    <button class="lang-btn on" data-lang="es">🇪🇸</button>
+    <button class="lang-btn" data-lang="en">🇬🇧</button>
+    <button class="lang-btn" data-lang="fr">🇫🇷</button>
+  </div>
+</header>
+
+<!-- PESTAÑA BÁSICO (BUILDER) -->
+<div id="tab-main" class="tab on">
+<main>
+  <div class="steps" id="steps">
+    <div class="step-item active" id="step1"><div class="step-circle">1</div><div class="step-label">CELDAS</div></div>
+    <div class="step-item" id="step2"><div class="step-circle">2</div><div class="step-label">CAPACIDAD</div></div>
+    <div class="step-item" id="step3"><div class="step-circle">3</div><div class="step-label">S×P</div></div>
+    <div class="step-item" id="step4"><div class="step-circle">4</div><div class="step-label">RESULTADO</div></div>
+  </div>
+
+  <div id="panel1" class="card">
+    <div class="card-title">¿Cuántas celdas vas a analizar?</div>
+    <div style="display:flex; gap:12px; align-items:center; justify-content:center; margin:20px 0;">
+      <button class="num-btn" id="dec10">−10</button>
+      <button class="num-btn" id="dec1">−</button>
+      <span id="cellCount" style="font-size:52px; font-weight:800; color:var(--acc); min-width:80px; text-align:center;">12</span>
+      <button class="num-btn" id="inc1">+</button>
+      <button class="num-btn" id="inc10">+10</button>
+    </div>
+    <button class="btn btn-primary" id="nextStep1" style="width:100%;">SIGUIENTE →</button>
+  </div>
+
+  <div id="panel2" class="card" style="display:none;">
+    <div class="card-title">Capacidad real de cada celda (mAh)</div>
+    <div id="capGrid"></div>
+    <div style="display:flex; gap:12px; margin-top:16px;">
+      <button class="btn btn-ghost" id="backStep2">← ATRÁS</button>
+      <button class="btn btn-primary" id="nextStep2">SIGUIENTE →</button>
+    </div>
+  </div>
+
+  <div id="panel3" class="card" style="display:none;">
+    <div class="card-title">Configuración del pack</div>
+    <div id="configGrid" style="display:flex; gap:20px; justify-content:space-between; flex-wrap:wrap;">
+      <div><div class="card-title" style="margin-bottom:6px;">SERIE (S)</div><div style="display:flex; gap:8px; align-items:center;"><button class="num-btn" id="sMinus" style="width:36px;height:36px;">−</button><span id="sVal" class="cfg-val">7</span><button class="num-btn" id="sPlus" style="width:36px;height:36px;">+</button></div><div style="font-size:10px; color:#888;" id="sVolt">25.2V</div></div>
+      <div><div class="card-title" style="margin-bottom:6px;">PARALELO (P)</div><div style="display:flex; gap:8px; align-items:center;"><button class="num-btn" id="pMinus" style="width:36px;height:36px;">−</button><span id="pVal" class="cfg-val">3</span><button class="num-btn" id="pPlus" style="width:36px;height:36px;">+</button></div><div id="pInfo" style="font-size:10px; color:#888;">3 ramas</div></div>
+      <div><div class="card-title" style="margin-bottom:6px;">NECESITAS</div><span id="totalNeeded" class="cfg-val" style="color:var(--acc);">21</span><div id="availInfo" style="font-size:10px;"></div></div>
+    </div>
+    <div style="margin:16px 0;"><div class="card-title">QUÍMICA</div><div style="display:flex; gap:8px;"><button class="chem-pill on" data-chem="liion">Li-ion 3.6V</button><button class="chem-pill" data-chem="lifepo4">LiFePO4 3.2V</button></div></div>
+    <div style="display:flex; gap:12px; margin-top:16px;">
+      <button class="btn btn-ghost" id="backStep3">← ATRÁS</button>
+      <button class="btn btn-primary" id="calculatePack">⚡ CALCULAR PACK</button>
+    </div>
+  </div>
+
+  <div id="panel4" style="display:none;">
+    <div id="resultArea"></div>
+  </div>
+</main>
+</div>
+
+<!-- PESTAÑA COMPLETO (TEST) -->
+<div id="tab-test" class="tab">
+<main>
+  <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:16px;">
+    <div class="card-title">BASE DE DATOS DE CELDAS</div>
+    <button class="btn btn-primary btn-sm" id="addCellBtn">+ AÑADIR</button>
+  </div>
+  <div id="testList"></div>
+</main>
+</div>
+
+<!-- PESTAÑA STATS -->
+<div id="tab-stats" class="tab">
+<main>
+  <div class="card">
+    <div class="card-title">ESTADÍSTICAS DE COLECCIÓN</div>
+    <div id="statsContent"></div>
+  </div>
+</main>
+</div>
+
+<!-- PESTAÑA HISTORIAL -->
+<div id="tab-history" class="tab">
+<main>
+  <div class="card">
+    <div class="card-title">HISTORIAL DE PACKS</div>
+    <div id="historyList"></div>
+    <button class="btn btn-danger btn-sm" id="clearHistory" style="margin-top:12px;">BORRAR TODO</button>
+  </div>
+</main>
+</div>
+
+<!-- PESTAÑA DECODER -->
+<div id="tab-decoder" class="tab">
+<main>
+  <div class="card">
+    <div class="card-title">DECODIFICADOR DE FECHAS</div>
+    <input type="text" id="decoderCode" class="inp" placeholder="Ej: 2F85, R084C253A2, MG1T">
+    <select id="decoderFormat" class="inp" style="margin-top:10px;">
+      <option value="auto">🔁 AUTO (Samsung/LG/Panasonic)</option>
+      <option value="samsung">Samsung SDI</option>
+      <option value="lg">LG Chem</option>
+      <option value="panasonic">Panasonic</option>
+    </select>
+    <button class="btn btn-primary" id="decodeBtn" style="margin-top:12px; width:100%;">🔍 DECODIFICAR</button>
+    <div id="decodeResult" style="margin-top:16px; padding:12px; background:rgba(255,255,255,0.03); border-radius:12px;"></div>
+  </div>
+</main>
+</div>
+
+<!-- PESTAÑA INFO -->
+<div id="tab-about" class="tab"><main><div class="card"><div class="card-title">KUPACK v3.0</div><p>Herramienta profesional para reacondicionadores de baterías de litio. Algoritmo de balanceo inteligente para packs con celdas recicladas.</p><br><p>📧 Soporte: kupack@battery.tools</p></div></main></div>
+
+<!-- PESTAÑA DONATIVO -->
+<div id="tab-donate" class="tab"><main><div class="card" style="text-align:center;"><div style="font-size:48px;">☕</div><div class="card-title">APOYA EL PROYECTO</div><p>Si KUPACK te es útil, considera invitarme a un café.</p><br><a href="https://paypal.me/jose4976" target="_blank" class="btn btn-primary" style="text-decoration:none;">💛 DONAR CON PAYPAL</a></div></main></div>
+
+<!-- MODAL CELDA -->
+<div class="modal-overlay" id="cellModal">
+  <div class="modal-box">
+    <div class="card-title">➕ NUEVA CELDA</div>
+    <input type="text" id="cellBrand" class="inp" placeholder="Marca (ej: Samsung)" style="margin-bottom:8px;">
+    <input type="text" id="cellModel" class="inp" placeholder="Modelo (ej: 30Q)" style="margin-bottom:8px;">
+    <div class="test-fields">
+      <div class="test-field"><label>Capacidad (mAh)</label><input type="number" id="cellCap" class="inp" placeholder="2850"></div>
+      <div class="test-field"><label>IR (mΩ)</label><input type="number" id="cellIr" class="inp" placeholder="25.0"></div>
+    </div>
+    <div style="display:flex; gap:10px; margin-top:20px;">
+      <button class="btn btn-ghost" id="closeModalBtn">CANCELAR</button>
+      <button class="btn btn-primary" id="saveCellBtn">GUARDAR</button>
+    </div>
+  </div>
+</div>
+
+<script>
+// ========== ALGORITMO DE BALANCEO ==========
+function balancePack(caps, S, P) {
+  const needed = S * P;
+  const allCells = caps.map((c, i) => ({ id: i+1, cap: c })).sort((a,b) => b.cap - a.cap);
+  const sorted = allCells.slice(0, needed);
+  const leftover = allCells.slice(needed);
+  const pool = sorted.slice();
+  let lo = pool.length-1, hi = 0;
+  const columns = Array.from({ length: S }, () => []);
+  for (let s=0; s<S; s++) {
+    const colCells = [];
+    for (let p=0; p<P; p++) colCells.push(p%2===0 ? pool[hi++] : pool[lo--]);
+    columns[s] = colCells;
+  }
+  const groups = Array.from({ length: P }, () => []);
+  for (let s=0; s<S; s++) {
+    const colSorted = columns[s].slice().sort((a,b)=>b.cap - a.cap);
+    const rowOrder = Array.from({ length: P }, (_,i)=>i);
+    if (s%2===1) rowOrder.reverse();
+    colSorted.forEach((cell, i) => groups[rowOrder[i]].push(cell));
+  }
+  const groupSums = groups.map(g => g.reduce((a,c) => a + c.cap, 0));
+  const maxSum = Math.max(...groupSums), minSum = Math.min(...groupSums);
+  const spread = maxSum - minSum;
+  const colSums = columns.map(col => col.reduce((a,c) => a + c.cap, 0));
+  return { groups, groupSums, minSum, maxSum, spread, leftover, colSums };
+}
+
+// ========== ESTADO GLOBAL ==========
+let state = {
+  step: 1,
+  cellCount: 12,
+  caps: [],
+  S: 7,
+  P: 3,
+  chem: 'liion',
+  result: null,
+  cells: []  // base de datos
+};
+
+// ========== PERSISTENCIA ==========
+function loadCells() { try { return JSON.parse(localStorage.getItem('kupack_cells') || '[]'); } catch(e){ return []; } }
+function saveCells(cells) { localStorage.setItem('kupack_cells', JSON.stringify(cells)); state.cells = cells; }
+function loadHistory() { try { return JSON.parse(localStorage.getItem('kupack_history') || '[]'); } catch(e){ return []; } }
+function saveHistory(h) { localStorage.setItem('kupack_history', JSON.stringify(h)); }
+
+// ========== UI BUILDER ==========
+function updateStepUI() {
+  for(let i=1;i<=4;i++) {
+    let el = document.getElementById(`step${i}`);
+    if(i < state.step) el.classList.add('done');
+    else if(i === state.step) el.classList.add('active');
+    else { el.classList.remove('active','done'); }
+  }
+  document.getElementById('panel1').style.display = state.step===1 ? '' : 'none';
+  document.getElementById('panel2').style.display = state.step===2 ? '' : 'none';
+  document.getElementById('panel3').style.display = state.step===3 ? '' : 'none';
+  document.getElementById('panel4').style.display = state.step===4 ? '' : 'none';
+}
+
+function buildCapGrid() {
+  const grid = document.getElementById('capGrid');
+  grid.innerHTML = '';
+  state.caps = new Array(state.cellCount).fill(null);
+  for(let i=0; i<state.cellCount; i++) {
+    let div = document.createElement('div');
+    div.className = 'cap-cell';
+    div.innerHTML = `<div class="cap-lbl">CELDA ${i+1}</div><input type="number" class="cap-inp" placeholder="mAh" data-idx="${i}">`;
+    grid.appendChild(div);
+  }
+  document.querySelectorAll('.cap-inp').forEach(inp => {
+    inp.oninput = e => { let idx = parseInt(e.target.dataset.idx); state.caps[idx] = e.target.value ? parseFloat(e.target.value) : null; };
+  });
+}
+
+function updateSPDisplay() {
+  document.getElementById('sVal').innerText = state.S;
+  document.getElementById('pVal').innerText = state.P;
+  let volt = (state.S * (state.chem==='liion'?3.6:3.2)).toFixed(1);
+  document.getElementById('sVolt').innerText = `${volt}V`;
+  document.getElementById('pInfo').innerText = `${state.P} ramas`;
+  let needed = state.S * state.P;
+  document.getElementById('totalNeeded').innerText = needed;
+  let available = state.caps.filter(v=>v && v>0).length;
+  document.getElementById('availInfo').innerHTML = available ? `Tienes ${available} celdas` : '';
+}
+
+function renderResult() {
+  if(!state.result) return;
+  const r = state.result;
+  const volt = (state.S * (state.chem==='liion'?3.6:3.2)).toFixed(1);
+  const totalAh = (r.groupSums.reduce((a,b)=>a+b,0)/state.P/1000).toFixed(2);
+  const html = `
+    <div class="card"><div class="card-title">RESUMEN DEL PACK</div>
+      <div class="sum-grid">
+        <div class="sum-card"><div class="sum-lbl">Voltaje</div><div class="sum-val">${volt} V</div></div>
+        <div class="sum-card"><div class="sum-lbl">Capacidad media</div><div class="sum-val">${totalAh} Ah</div></div>
+        <div class="sum-card"><div class="sum-lbl">Spread ramas</div><div class="sum-val">${r.spread} mAh</div></div>
+        <div class="sum-card"><div class="sum-lbl">Configuración</div><div class="sum-val">${state.S}S${state.P}P</div></div>
+      </div>
+    </div>
+    <div class="card"><div class="card-title">DISTRIBUCIÓN DE CELDAS</div>
+      <div style="overflow-x:auto;">${renderMatrix(r)}</div>
+    </div>
+    <div class="card"><div style="display:flex; gap:8px; flex-wrap:wrap;">
+      <button class="btn btn-ghost btn-sm" id="exportCSVBtn">📋 EXPORTAR CSV</button>
+      <button class="btn btn-primary btn-sm" id="savePackBtn">💾 GUARDAR PACK</button>
+      <button class="btn btn-ghost btn-sm" id="restartBtn">↺ NUEVO PACK</button>
+    </div></div>
+  `;
+  document.getElementById('resultArea').innerHTML = html;
+  document.getElementById('exportCSVBtn').onclick = () => exportCSV(r);
+  document.getElementById('savePackBtn').onclick = () => savePackDialog();
+  document.getElementById('restartBtn').onclick = () => { state.result=null; state.caps=[]; state.cellCount=12; updateCellCountDisplay(12); state.step=1; updateStepUI(); };
+}
+
+function renderMatrix(r) {
+  let html = '<table style="width:100%; border-collapse:collapse; font-size:12px;">';
+  for(let i=0; i<r.groups.length; i++) {
+    html += `<tr><td style="padding:6px; border:1px solid #333; background:#f0a50010;"><b>Rama ${i+1}</b></td>`;
+    r.groups[i].forEach(cell => { html += `<td style="padding:6px; border:1px solid #333;">${cell.cap} mAh</td>`; });
+    html += `<td style="padding:6px; border:1px solid #333; background:#f0a50020;"><b>Σ ${r.groupSums[i]} mAh</b></td></tr>`;
+  }
+  html += '</table>';
+  return html;
+}
+
+function exportCSV(r) {
+  let csv = 'Rama,';
+  for(let s=0; s<state.S; s++) csv += `S${s+1},`;
+  csv += 'Suma_mAh\n';
+  r.groups.forEach((g, i) => {
+    csv += `P${i+1},`;
+    g.forEach(c => csv += `${c.cap},`);
+    csv += `${r.groupSums[i]}\n`;
+  });
+  navigator.clipboard.writeText(csv).then(() => alert('CSV copiado al portapapeles'));
+}
+
+function savePackDialog() {
+  let name = prompt('Nombre del pack:', `Pack ${state.S}S${state.P}P`);
+  if(!name) return;
+  let history = loadHistory();
+  history.push({ name, date: new Date().toLocaleString(), config: `${state.S}S${state.P}P`, cells: state.cellCount });
+  saveHistory(history);
+  alert('Pack guardado en historial');
+}
+
+// ========== UI TEST (COMPLETO) ==========
+function renderTestList() {
+  const cells = loadCells();
+  const container = document.getElementById('testList');
+  if(!cells.length) { container.innerHTML = '<div class="test-empty">🔋 No hay celdas registradas. Pulsa "+ AÑADIR"</div>'; return; }
+  container.innerHTML = cells.map((c, idx) => `
+    <div class="test-cell-card">
+      <div style="display:flex; justify-content:space-between;">
+        <div><span class="test-cell-id">#${idx+1}</span><div style="font-size:12px;">${c.brand || '?'} ${c.model || ''}</div></div>
+        <div><span class="badge">${c.cap || '?'} mAh</span><button class="btn btn-danger btn-sm" style="margin-left:8px;" onclick="deleteCell(${idx})">✕</button></div>
+      </div>
+      ${c.ir ? `<div style="font-size:10px; color:#4db8ff; margin-top:6px;">IR: ${c.ir} mΩ</div>` : ''}
+    </div>
+  `).join('');
+}
+
+function addCell() { document.getElementById('cellModal').classList.add('on'); }
+function saveCell() {
+  let brand = document.getElementById('cellBrand').value.trim();
+  let model = document.getElementById('cellModel').value.trim();
+  let cap = parseInt(document.getElementById('cellCap').value);
+  let ir = parseFloat(document.getElementById('cellIr').value);
+  if(!cap) { alert('Introduce una capacidad'); return; }
+  let cells = loadCells();
+  cells.push({ brand, model, cap, ir, date: new Date().toISOString() });
+  saveCells(cells);
+  document.getElementById('cellModal').classList.remove('on');
+  document.getElementById('cellBrand').value = '';
+  document.getElementById('cellModel').value = '';
+  document.getElementById('cellCap').value = '';
+  document.getElementById('cellIr').value = '';
+  renderTestList();
+  renderStats();
+}
+window.deleteCell = (idx) => { let cells = loadCells(); cells.splice(idx,1); saveCells(cells); renderTestList(); renderStats(); };
+
+function renderStats() {
+  const cells = loadCells();
+  const statsDiv = document.getElementById('statsContent');
+  if(!cells.length) { statsDiv.innerHTML = '<div class="test-empty">Añade celdas para ver estadísticas</div>'; return; }
+  const caps = cells.filter(c=>c.cap).map(c=>c.cap);
+  const avg = caps.length ? (caps.reduce((a,b)=>a+b,0)/caps.length).toFixed(0) : 0;
+  statsDiv.innerHTML = `
+    <div class="sum-grid">
+      <div class="sum-card"><div class="sum-lbl">Total celdas</div><div class="sum-val">${cells.length}</div></div>
+      <div class="sum-card"><div class="sum-lbl">Capacidad media</div><div class="sum-val">${avg} mAh</div></div>
+      <div class="sum-card"><div class="sum-lbl">Mejor celda</div><div class="sum-val">${Math.max(...caps)} mAh</div></div>
+      <div class="sum-card"><div class="sum-lbl">Peor celda</div><div class="sum-val">${Math.min(...caps)} mAh</div></div>
+    </div>
+  `;
+}
+
+function renderHistoryList() {
+  const hist = loadHistory();
+  const container = document.getElementById('historyList');
+  if(!hist.length) { container.innerHTML = '<div class="test-empty">No hay packs guardados</div>'; return; }
+  container.innerHTML = hist.slice().reverse().map(h => `<div class="test-cell-card"><div><b>${h.name}</b> · ${h.config} · ${h.date}</div></div>`).join('');
+}
+document.getElementById('clearHistory')?.addEventListener('click', () => { if(confirm('Borrar todo el historial?')) { saveHistory([]); renderHistoryList(); } });
+
+// ========== DECODER ==========
+function decodeCell() {
+  let code = document.getElementById('decoderCode').value;
+  let format = document.getElementById('decoderFormat').value;
+  let result = '';
+  if(!code) { result = '❌ Introduce un código'; }
+  else if(code.match(/^\d[A-Z]\d\d$/)) result = '✅ Samsung SDI · Año: 2015+ · Mes: estimado';
+  else if(code.match(/^[A-Z]\d{3}/)) result = '✅ LG Chem · Fecha aproximada detectada';
+  else result = `🔍 Código: ${code} (formato no reconocido automáticamente)`;
+  document.getElementById('decodeResult').innerHTML = `<div style="background:rgba(77,184,255,0.1); padding:12px; border-radius:10px;">${result}</div>`;
+}
+
+// ========== NAVEGACIÓN ==========
+document.querySelectorAll('.nav-btn').forEach(btn => {
+  btn.onclick = () => {
+    document.querySelectorAll('.nav-btn').forEach(b=>b.classList.remove('on'));
+    btn.classList.add('on');
+    document.querySelectorAll('.tab').forEach(t=>t.classList.remove('on'));
+    document.getElementById(`tab-${btn.dataset.tab}`).classList.add('on');
+    if(btn.dataset.tab === 'test') renderTestList();
+    if(btn.dataset.tab === 'stats') renderStats();
+    if(btn.dataset.tab === 'history') renderHistoryList();
+  };
+});
+
+// ========== EVENTOS BUILDER ==========
+function updateCellCountDisplay(n) { state.cellCount = n; document.getElementById('cellCount').innerText = n; }
+document.getElementById('dec1').onclick = () => updateCellCountDisplay(Math.max(1, state.cellCount-1));
+document.getElementById('inc1').onclick = () => updateCellCountDisplay(Math.min(200, state.cellCount+1));
+document.getElementById('dec10').onclick = () => updateCellCountDisplay(Math.max(1, state.cellCount-10));
+document.getElementById('inc10').onclick = () => updateCellCountDisplay(Math.min(200, state.cellCount+10));
+document.getElementById('nextStep1').onclick = () => { buildCapGrid(); state.step=2; updateStepUI(); };
+document.getElementById('backStep2').onclick = () => { state.step=1; updateStepUI(); };
+document.getElementById('nextStep2').onclick = () => { state.step=3; updateSPDisplay(); updateStepUI(); };
+document.getElementById('backStep3').onclick = () => { state.step=2; updateStepUI(); };
+document.getElementById('sMinus').onclick = () => { state.S = Math.max(1, state.S-1); updateSPDisplay(); };
+document.getElementById('sPlus').onclick = () => { state.S = Math.min(24, state.S+1); updateSPDisplay(); };
+document.getElementById('pMinus').onclick = () => { state.P = Math.max(1, state.P-1); updateSPDisplay(); };
+document.getElementById('pPlus').onclick = () => { state.P = Math.min(30, state.P+1); updateSPDisplay(); };
+document.querySelectorAll('.chem-pill').forEach(btn => {
+  btn.onclick = () => { document.querySelectorAll('.chem-pill').forEach(b=>b.classList.remove('on')); btn.classList.add('on'); state.chem = btn.dataset.chem; updateSPDisplay(); };
+});
+document.getElementById('calculatePack').onclick = () => {
+  let valid = state.caps.filter(v=>v && v>0);
+  if(state.S*state.P > valid.length) { alert('No hay suficientes celdas con datos'); return; }
+  state.result = balancePack(valid, state.S, state.P);
+  state.step = 4;
+  updateStepUI();
+  renderResult();
+};
+
+// ========== MODALES ==========
+document.getElementById('addCellBtn').onclick = () => addCell();
+document.getElementById('closeModalBtn').onclick = () => document.getElementById('cellModal').classList.remove('on');
+document.getElementById('saveCellBtn').onclick = () => saveCell();
+document.getElementById('decodeBtn').onclick = () => decodeCell();
+
+// ========== INICIALIZAR ==========
+state.cells = loadCells();
+updateCellCountDisplay(12);
+updateStepUI();
+renderTestList();
+renderHistoryList();
+</script>
+</body>
+</html>
